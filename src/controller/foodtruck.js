@@ -17,8 +17,8 @@ export default({ config, db}) => {
     newFoodTruck.name = req.body.name;
     newFoodTruck.foodtype = req.body.foodtype;
     newFoodTruck.avgcost = req.body.avgcost;
-    newFoodTruck.geometry.coordinates = req.body.geometry.coordinates;
-
+    newFoodTruck.geometry.coordinates.lat = req.body.geometry.coordinates[0];
+    newFoodTruck.geometry.coordinates.long = req.body.geometry.coordinates[1];
     newFoodTruck.save(err => {
       if (err) {
         res.send(err);
@@ -66,7 +66,8 @@ export default({ config, db}) => {
         console.log("Avgcost updated");
       }
       if (req.body.geometry) {
-        foodtruck.geometry.coordinates = req.body.geometry.coordinates;
+        foodtruck.geometry.coordinates.lat = req.body.geometry.coordinates.lat;
+        foodtruck.geometry.coordinates.long = req.body.geometry.coordinates.long;
         console.log("Coordinates updated");
       }
       // if (req.body.geometry.coordinates){
@@ -84,15 +85,34 @@ export default({ config, db}) => {
 
   //"/v1/foodtruck/:id" - Delete
   api.delete("/:id", authenticate, (req, res) => {
-    foodtruck.remove({
-      _id: req.params.id
-    }, (err, foodtruck) => {
-      if (err) {
-        res.send(err);
+    foodtruck.findById(req.params.id, (err, foodtruck) => {
+      if(err){
+        res.status(500).send(err);
+        return;
       }
-      res.json({message: "foodtruck DELTED!"});
+      if(foodtruck === null) {
+        res.status(404).send("FoodTruck not found!");
+        return;
+      }
+      foodtruck.remove({
+        _id: req.params.id
+      }, (err, foodtruck) => {
+        if (err) {
+          res.status(500).send(err);
+          return;
+        }
+        Review.remove({
+          foodtruck: req.params.id
+        }, (err, review) => {
+          if(err){
+            res.send(err);
+          }
+          res.json({message: "foodtruck DELTED!"});
+        });
+      });
     });
   });
+
 
   //add review for a specific foodtruck id
   //"/v1/foodtruck/reviews/add/:id"

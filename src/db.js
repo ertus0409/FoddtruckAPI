@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 import config from "./config";
 
 export default callback => {
-  let db = mongoose.connect(config.mongoUrl);
+  const options = {
+    useMongoClient: true
+  };
+  mongoose.Promise = global.Promise;
+  let db = mongoose.connect(config.mongoUrl, options);
   callback(db);
 }
